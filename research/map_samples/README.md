@@ -1,22 +1,22 @@
 # Reference map samples
 
-These two binary maps are reference material for reverse-engineering the SAGE/Zero Hour map format. They are **not application assets** and must not be loaded by the production map generator automatically.
+These binary maps are research references only. They are not production assets.
 
-## Samples currently stored in the repository root
+Expected repository-root samples:
 
-1. `MY MAP.map` — user's map sample, 28,712 bytes.
-2. `CONTRA Custom Campaign The Battle for Lake Town.map` — reference mission map, 147,237 bytes.
+- `MY MAP.map` — user's map sample.
+- `CONTRA Custom Campaign The Battle for Lake Town.map` — reference mission.
 
-Their paired `.tga` files are also present at the repository root and are reference images only.
+The paired `.tga` files are also reference material.
 
-## Analysis rule
+## Safe analysis workflow
 
-Do not infer field meanings from one sample alone. Every map-format field must be confirmed by comparison between both samples and, where possible, additional controlled map edits. The binary writer must not be implemented from guesses.
+`probe_map.py` reads samples without modifying them and reports file size, SHA-256, initial bytes, known markers, and raw 32-bit interpretations from the first 512 bytes. It intentionally assigns **no semantic field names**.
 
-## Initial verified observation
+Example:
 
-Both samples begin with the same `EAR\x00` prefix and contain the ASCII marker `CkMp` at the same relative header position. Their following bytes differ, so dimensions/metadata must be decoded from controlled comparisons rather than assumed.
+```text
+python research/map_samples/probe_map.py "MY MAP.map" "CONTRA Custom Campaign The Battle for Lake Town.map" --output map_probe.json
+```
 
-## Separation note
-
-The current GitHub connector can create UTF-8 files but does not provide a binary move operation. Therefore the original binary samples remain untouched in the repository root for now; this directory is the isolated research manifest and analysis area. They must not be imported by the production package.
+The production package must never automatically load files from this research directory or the repository-root samples.
