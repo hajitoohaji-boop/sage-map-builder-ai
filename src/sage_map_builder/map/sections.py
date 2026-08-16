@@ -44,3 +44,8 @@ def marker_ranges(data: bytes, marker: bytes) -> tuple[int, ...]:
             return tuple(offsets)
         offsets.append(found)
         cursor = found + 1
+
+
+def common_spans(left: bytes, right: bytes, *, min_size: int = 4) -> tuple[SectionCandidate, ...]:
+    """Alias with a clearer name for callers doing cross-sample analysis."""
+    return common_byte_runs(left, right, min_size)
