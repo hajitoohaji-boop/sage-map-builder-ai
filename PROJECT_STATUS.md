@@ -19,6 +19,22 @@ Requirements: the core editor works without AI; Gemini/other AI is optional and 
 - Per-map Section Report JSON.
 - Single-map and two-map analysis pipelines.
 - Automatic `.map` discovery and discovery pipeline.
+- Byte evidence primitives (`ByteEvidence`) with offset, length, SHA-256 and hex preview.
+
+### Verified real samples
+The repository tree was checked directly. The two real maps are present in the repository root:
+
+1. `MY MAP.map` — 28,712 bytes — blob SHA `7d4e1e0b21febd33a460f88a557c4a1e0b3fbb7c`.
+2. `CONTRA Custom Campaign The Battle for Lake Town.map` — 147,237 bytes — blob SHA `b33c1ae19eea4c694bc8398571021e1cf1163e8c`.
+
+Repository research notes verify for both samples:
+- first bytes are `45 41 52 00` (`EAR\\0`)
+- marker `CkMp` occurs at the same relative header position
+- the samples differ substantially in size and payload
+
+A machine-readable manifest is stored at `research/map_samples/sample_manifest.json`.
+
+Important: the binary blobs are not treated as UTF-8 source files. Analysis must use binary access. No semantic field meaning is assigned from one sample alone.
 
 ### Internal model
 `MapDocument` contains file name, raw size, optional dimensions, regions, waypoints, objects, scripts, and opaque sections. Unknown binary data is preserved rather than guessed.
@@ -33,57 +49,50 @@ Requirements: the core editor works without AI; Gemini/other AI is optional and 
 - Waypoints: validated names/coordinates, optional bounds, duplicate prevention, add/remove.
 - Objects: ID, template, X/Y/Z, optional owner, duplicate prevention, add/remove.
 - Scripts: MapScript with enabled flag, conditions/actions and generic ScriptAction(kind,args), duplicate prevention, add/remove.
-
-### NEW: Unified editor domain service
-Added:
-- `src/sage_map_builder/model/editor_service.py`
-- `tests/test_editor_service.py`
-
-`MapEditorService` is now the single API for GUI/CLI code to modify Waypoints, Objects and Scripts. It provides add/remove operations plus snapshot-based undo/redo. GUI code must not manipulate raw lists directly.
-
-Commits:
-- `97af4d821ca02094da398a603c9cd4106d767ea5` — service
-- `c5520bf7ff7aeb5b9a710d792154df4154491202` — tests
+- `MapEditorService`: unified API for these entities plus snapshot-based undo/redo.
 
 ## Architecture
 ```text
-.map / samples
-  -> Sample Discovery
-  -> MapReader
-     -> Header Evidence / Header Words / Regions / Layout Matching
+REAL .map samples
+  -> binary discovery
+  -> MapReader / evidence
+     -> Header / words / regions / markers
   -> MapDocument
      -> Waypoints / Objects / Scripts / Opaque Sections
   -> MapEditorService
      -> validation / undo / redo
   -> EditSession / Preservation Writer
   -> output .map
-
-Separate: MapReader -> Section Report -> Research/Comparison Report
-Separate future AI: Arabic description -> optional AI adapter -> validated commands
 ```
+
+Separate: MapReader -> Section Report -> Research/Comparison Report.
+Separate future AI: Arabic description -> optional AI adapter -> validated commands.
 
 ## Next priorities
 
-### 1. REAL MAP FORMAT DECODING — NEXT
-Use the actual Generals/Zero Hour `.map` samples in the repository/workspace and reliable format evidence to identify header/dimensions, terrain/height, textures, objects, waypoints, players/teams, scripts/mission data and remaining sections. Never label a section from a guess; preserve unknown bytes and attach evidence/confidence.
+### 1. REAL MAP FORMAT DECODING — CURRENT
+Now that the actual two samples are confirmed in GitHub, work from these exact files and their verified hashes. The next parser work must inspect binary sections/markers and compare both samples. Use controlled evidence and existing research scripts. Do not invent offsets, dimensions, object layouts, or terrain layouts.
 
-### 2. Real binary writer
-Encode verified sections while preserving every unknown section byte-for-byte.
+### 2. Golden sample tests
+Add tests that identify the exact two samples by size/hash and assert verified observations (`EAR\\0`, `CkMp`) without assuming unverified semantic meanings.
 
-### 3. Mod/INI asset database
+### 3. Real semantic decoding
+Identify header/dimensions, terrain/height, textures, objects, waypoints, players/teams, scripts/mission data and remaining sections only after cross-sample verification.
+
+### 4. Real binary writer
+Encode verified sections while preserving every unknown section byte-for-byte. First goal is an exact read/write preservation test for an untouched sample.
+
+### 5. Mod/INI asset database
 Read supplied mod files and build a registry of factions, units, buildings, upgrades, special powers, templates and PlayerTemplate/ownership data. Use actual definitions.
 
-### 4. GUI
+### 6. GUI
 Build the independent World Builder interface around MapEditorService: open/save-as, map/terrain view, waypoint/object placement, owner/team selection, script editor, undo/redo, validation panel, mod asset browser, and separate reference-map workspace.
 
-### 5. Mission/script system
+### 7. Mission/script system
 Translate common World Builder concepts into validated internal commands and export only when the map representation is verified.
 
-### 6. Arabic optional layer
+### 8. Arabic optional layer
 Keep Arabic handling outside the deterministic core. The editor must work normally without AI.
 
-### 7. Real sample integration
-Automatically discover the two actual `.map` samples by extension and verified header; never hard-code filenames.
-
 ## Continuation rule
-Read this file first in every new conversation. Do not restart or recreate implemented architecture. Continue from **REAL MAP FORMAT DECODING — NEXT** and update this file after each major milestone.
+Read this file first in every new conversation. Do not restart or recreate implemented architecture. Continue from **REAL MAP FORMAT DECODING — CURRENT** and update this file after each major milestone.
