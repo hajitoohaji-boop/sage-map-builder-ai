@@ -1,30 +1,33 @@
-"""Minimal, source-derived DataChunk reader/writer primitives.
+"""Source-derived DataChunk header primitives.
 
-The implementation intentionally models only the header mechanics that are
-confirmed by the EA World Builder source. Chunk payload semantics remain
-opaque until independently verified.
+EA's released DataChunk.h defines the chunk header as two shorts:
+version and data size. The symbolic chunk ID is supplied by the table of
+contents and is not encoded in this four-byte header.
 """
 from __future__ import annotations
 from dataclasses import dataclass
 import struct
 
-HEADER_SIZE = 8
+HEADER_SIZE = 4
 
 @dataclass(frozen=True)
 class DataChunkHeader:
-    chunk_id: int
     version: int
     data_size: int
 
     def pack(self) -> bytes:
-        return struct.pack("<IHH", self.chunk_id, self.version, self.data_size)
+        if not 0 <= self.version <= 0xFFFF:
+            raise ValueError("DataChunk version exceeds uint16")
+        if not 0 <= self.data_size <= 0xFFFF:
+            raise ValueError("DataChunk size exceeds uint16")
+        return struct.pack("<HH", self.version, self.data_size)
 
     @classmethod
     def unpack(cls, data: bytes, offset: int = 0) -> "DataChunkHeader":
         if offset < 0 or offset + HEADER_SIZE > len(data):
             raise ValueError("insufficient bytes for DataChunk header")
-        chunk_id, version, data_size = struct.unpack_from("<IHH", data, offset)
-        return cls(chunk_id, version, data_size)
+        version, data_size = struct.unpack_from("<HH", data, offset)
+        return cls(version, data_size)
 
 
 def read_chunk(data: bytes, offset: int = 0) -> tuple[DataChunkHeader, bytes, int]:
