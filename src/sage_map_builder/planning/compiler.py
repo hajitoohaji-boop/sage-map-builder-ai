@@ -13,12 +13,7 @@ class PlanCompileError(ValueError):
     """Raised when a plan cannot be compiled without inventing mod data."""
 
 
-def compile_plan(
-    plan: MapGenerationPlan,
-    *,
-    asset_index: AssetIndex,
-    mission: MissionPlan,
-) -> MapDocument:
+def compile_plan(plan: MapGenerationPlan, *, asset_index: AssetIndex, mission: MissionPlan) -> MapDocument:
     issues = validate_plan(plan)
     errors = [issue for issue in issues if issue.level == "error"]
     if errors:
@@ -37,15 +32,8 @@ def compile_plan(
         if placement.kind.casefold() == "waypoint":
             add_waypoint(document, placement.template, placement.x, placement.y, placement.z)
             continue
-        owner = placement.owner or "PlyrCivilian"
-        add_asset_object(
-            document,
-            asset_index,
-            placement.template,
-            owner,
-            placement.x,
-            placement.y,
-            placement.z,
-        )
+        if not placement.owner or not placement.owner.strip():
+            raise PlanCompileError(f"placement owner is required: {placement.template}")
+        add_asset_object(document, asset_index, placement.template, placement.owner, placement.x, placement.y, placement.z)
     document.validate()
     return document
