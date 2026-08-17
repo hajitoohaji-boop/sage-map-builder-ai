@@ -22,6 +22,7 @@ Requirements: the core editor works without AI; Gemini/other AI is optional and 
 - Deterministic cross-sample byte comparison.
 - Unified evidence-only sample report.
 - Unified evidence-only cross-sample comparison report.
+- Section confidence and section-range validation.
 
 ### Verified real samples
 The repository tree was checked directly. The two real maps are present in the repository root:
@@ -37,6 +38,7 @@ Verified observations: both start with `45 41 52 00` (`EAR\\0`); `CkMp` occurs a
 - Lossless preservation writer.
 - Explicit binary patches with bounds/overlap checks.
 - Transactional EditSession with preview/commit/rollback.
+- Real-sample preservation regression tests now cover both repository maps when present.
 
 ### World Builder data model
 - Waypoints: validated coordinates/names, optional bounds, duplicate prevention, add/remove.
@@ -47,6 +49,16 @@ Verified observations: both start with `45 41 52 00` (`EAR\\0`); `CkMp` occurs a
 
 ## Reporting layer
 Added `sample_report.py` and `compare_report.py` plus tests. Reports intentionally keep `semantic_interpretation = null`; they record hashes, sizes, header evidence, markers, section evidence and byte-level comparisons without claiming unverified field meanings.
+
+## Binary format work
+- `DataChunk` header corrected from an earlier incorrect 8-byte assumption to the EA-source-supported 4-byte header (`version` + `dataSize`).
+- `chunk_sequence.py` preserves opaque payloads and supports lossless chunk-sequence round trip.
+- `WaypointsList` codec is source-derived, but full map chunk identity/TOC is not yet verified.
+- No semantic chunk name is promoted without both source and binary evidence.
+
+## Mod/asset stack
+- BIG archive reader, archive access, INI parser/scanner, asset classification/index and deterministic `ModRegistry` are present.
+- `MapGenerationPlan` + validator + compiler are present and keep unknown assets from being silently invented.
 
 ## Architecture
 ```text
@@ -72,7 +84,7 @@ Separate future AI path: `Arabic description -> optional AI adapter -> validated
 Run the evidence/report pipeline against the two exact real samples and persist resulting JSON reports. Then use cross-sample evidence to isolate candidate sections. Do not assign semantic names yet.
 
 ### 2. Golden sample tests
-Identify exact samples by size/hash and assert verified observations (`EAR\\0`, `CkMp`).
+Exact size/prefix/marker checks are now covered against the repository manifest; untouched preservation tests cover both real samples when checked out.
 
 ### 3. Real semantic decoding
 Only after evidence supports it, identify header/dimensions, terrain/height, textures, objects, waypoints, players/teams, scripts/mission data and remaining sections.
