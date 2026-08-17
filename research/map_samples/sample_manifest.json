@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "source": "GitHub repository main branch",
+  "samples": [
+    {
+      "path": "MY MAP.map",
+      "size": 28712,
+      "blob_sha": "7d4e1e0b21febd33a460f88a557c4a1e0b3fbb7c",
+      "verified_prefix_hex": "45 41 52 00",
+      "verified_marker": "CkMp"
+    },
+    {
+      "path": "CONTRA Custom Campaign The Battle for Lake Town.map",
+      "size": 147237,
+      "blob_sha": "b33c1ae19eea4c694bc8398571021e1cf1163e8c",
+      "verified_prefix_hex": "45 41 52 00",
+      "verified_marker": "CkMp"
+    }
+  ],
+  "rules": [
+    "These are verified repository facts, not semantic guesses.",
+    "Do not hard-code semantic offsets from one sample.",
+    "Do not modify the original samples.",
+    "Use both samples for cross-validation before assigning field meanings."
+  ]
+}
