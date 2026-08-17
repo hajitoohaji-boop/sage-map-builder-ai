@@ -8,6 +8,7 @@ import json
 from sage_map_builder.map.marker_scan import scan
 from sage_map_builder.map.evidence import make_evidence
 from sage_map_builder.map.section_evidence import section_evidence
+from sage_map_builder.report.semantic_evidence import build_semantic_evidence
 
 
 def build_sample_report(path: Path) -> dict:
@@ -15,11 +16,12 @@ def build_sample_report(path: Path) -> dict:
     marker_report = scan(data)
     sections = [asdict(s) for s in section_evidence(data)]
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "sample": {"file": path.name, "size": len(data), "sha256": hashlib.sha256(data).hexdigest()},
         "header_evidence": asdict(make_evidence(data, "first_64_bytes", 0, min(64, len(data)))),
         "markers": marker_report["markers"],
         "sections": sections,
+        "semantic_evidence": build_semantic_evidence(),
         "semantic_interpretation": None,
         "interpretation_rule": "No semantic label is assigned unless independently verified.",
     }
