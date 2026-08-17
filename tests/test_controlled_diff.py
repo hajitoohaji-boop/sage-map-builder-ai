@@ -1,4 +1,4 @@
-from sage_map_builder.research.controlled_diff import diff_bytes
+from sage_map_builder.analysis.controlled_diff import diff_bytes
 
 
 def test_controlled_diff_groups_contiguous_changes():
