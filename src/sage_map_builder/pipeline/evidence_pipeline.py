@@ -1,6 +1,6 @@
 """Unified evidence pipeline for real .map samples.
 
-This layer composes existing deterministic scanners. It does not infer
+This layer composes deterministic scanners and comparisons. It does not infer
 semantic field meanings.
 """
 from __future__ import annotations
@@ -9,14 +9,21 @@ import json
 
 from ..report.sample_report import build_sample_report
 from ..report.compare_report import build_compare_report
+from ..analysis.section_compare import compare_candidate_sections
 
 
 def analyze_samples(paths: list[str | Path]) -> dict:
     resolved = [Path(p) for p in paths]
+    if not resolved:
+        raise ValueError("at least one map sample is required")
     samples = [build_sample_report(p) for p in resolved]
-    result = {"schema_version": 1, "samples": samples, "comparison": None}
+    result = {"schema_version": 2, "samples": samples, "comparison": None, "section_comparison": None}
     if len(resolved) == 2:
         result["comparison"] = build_compare_report(resolved[0], resolved[1])
+        result["section_comparison"] = compare_candidate_sections(
+            resolved[0].read_bytes(), samples[0]["markers"],
+            resolved[1].read_bytes(), samples[1]["markers"],
+        )
     return result
 
 
