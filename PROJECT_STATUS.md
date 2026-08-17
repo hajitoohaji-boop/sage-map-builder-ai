@@ -1,246 +1,89 @@
 # SAGE Map Builder AI — Project Status
 
-Last updated: 2026-08-16
+Last updated: 2026-08-17
 
-## Project goal
-
+## Goal
 Build an independent World Builder-style editor for Command & Conquer: Generals – Zero Hour / SAGE maps.
 
-Core requirements agreed with the project owner:
-
-- The main program must work **without AI**.
-- Gemini/other AI is optional and must remain separate from the core application.
-- The program must be deterministic and avoid guessing unknown binary structures.
-- Arabic descriptions should eventually be supported by a separate AI/translation layer, without making the editor dependent on AI.
-- Two map files supplied by the owner are samples/reference data and must remain separate from source code and from each other.
-- Mod/INI files must eventually be read so the editor can build maps using the actual mod assets and rules.
-- The project should become a usable independent World Builder, not only a map analyzer.
+Requirements: the core editor works without AI; Gemini/other AI is optional and separate; the core is deterministic and never guesses unknown binary structures; Arabic descriptions may later use a separate AI adapter; the two supplied map files remain separate reference samples; supplied mod/INI files must eventually drive the asset database; final goal is a usable independent World Builder, not only an analyzer.
 
 ## Repository
+`hajitoohaji-boop/sage-map-builder-ai`
 
-GitHub repository: `hajitoohaji-boop/sage-map-builder-ai`
+## Implemented
 
-## What has been implemented
+### Analysis foundation
+- Header evidence and header-word extraction.
+- Byte-region detection and region layout matching.
+- Evidence-preserving MapReader.
+- Per-map Section Report JSON.
+- Single-map and two-map analysis pipelines.
+- Automatic `.map` discovery and discovery pipeline.
 
-### Binary/map analysis foundation
+### Internal model
+`MapDocument` contains file name, raw size, optional dimensions, regions, waypoints, objects, scripts, and opaque sections. Unknown binary data is preserved rather than guessed.
 
-- Header evidence extraction.
-- Header word extraction.
-- Byte-region detection.
-- Region layout matching using width/height/bytes-per-cell candidates.
-- Evidence-preserving `MapReader`.
-- Unified per-map Section Report JSON.
-- Single-map deterministic analysis pipeline.
-- Two-map analysis pipeline.
-- Automatic `.map` sample discovery.
-- Discovery pipeline that analyzes discovered valid maps and reports skipped files.
-
-### Internal map model
-
-`MapDocument` currently contains:
-
-- file name
-- raw byte size
-- optional dimensions
-- regions
-- waypoints
-- objects
-- scripts
-- opaque sections
-
-Unknown binary data is intentionally preserved as opaque data rather than guessed.
-
-### Serialization and safe editing
-
-- Deterministic JSON serialization/deserialization for `MapDocument`.
+### Serialization/edit safety
+- Deterministic MapDocument JSON round trip.
 - Lossless preservation writer.
-- Explicit binary patches.
-- Bounds checking for patches.
-- Overlap checking for patches.
-- Transactional `EditSession` with preview, commit, and rollback.
+- Explicit binary patches with bounds/overlap checks.
+- Transactional EditSession with preview/commit/rollback.
 
-### World Builder data model started
+### World Builder data model
+- Waypoints: validated names/coordinates, optional bounds, duplicate prevention, add/remove.
+- Objects: ID, template, X/Y/Z, optional owner, duplicate prevention, add/remove.
+- Scripts: MapScript with enabled flag, conditions/actions and generic ScriptAction(kind,args), duplicate prevention, add/remove.
 
-#### Waypoints
+### NEW: Unified editor domain service
+Added:
+- `src/sage_map_builder/model/editor_service.py`
+- `tests/test_editor_service.py`
 
-- `Waypoint` model.
-- Numeric coordinates.
-- Optional map-bound validation.
-- Duplicate-name prevention.
-- Add/remove operations.
+`MapEditorService` is now the single API for GUI/CLI code to modify Waypoints, Objects and Scripts. It provides add/remove operations plus snapshot-based undo/redo. GUI code must not manipulate raw lists directly.
 
-#### Objects
+Commits:
+- `97af4d821ca02094da398a603c9cd4106d767ea5` — service
+- `c5520bf7ff7aeb5b9a710d792154df4154491202` — tests
 
-- `GameObject` model.
-- Object ID.
-- Template name.
-- X/Y/Z coordinates.
-- Optional owner.
-- Duplicate-object-ID prevention.
-- Add/remove operations.
-
-#### Scripts
-
-- `MapScript` model.
-- Enabled flag.
-- Conditions.
-- Actions.
-- Generic `ScriptAction(kind, args)` representation.
-- Duplicate-script-name prevention.
-- Add/remove operations.
-
-Example already covered by tests:
-
+## Architecture
 ```text
-WAVE_1
-  Condition: timer_expired(timer=WAVE, seconds=90)
-  Action: spawn_team(team=team0001, waypoint=SPAWN)
+.map / samples
+  -> Sample Discovery
+  -> MapReader
+     -> Header Evidence / Header Words / Regions / Layout Matching
+  -> MapDocument
+     -> Waypoints / Objects / Scripts / Opaque Sections
+  -> MapEditorService
+     -> validation / undo / redo
+  -> EditSession / Preservation Writer
+  -> output .map
+
+Separate: MapReader -> Section Report -> Research/Comparison Report
+Separate future AI: Arabic description -> optional AI adapter -> validated commands
 ```
 
-## Important design decision
+## Next priorities
 
-Do NOT assume that fields such as map dimensions, terrain sections, object records, or script records are understood merely because a pattern looks plausible.
+### 1. REAL MAP FORMAT DECODING — NEXT
+Use the actual Generals/Zero Hour `.map` samples in the repository/workspace and reliable format evidence to identify header/dimensions, terrain/height, textures, objects, waypoints, players/teams, scripts/mission data and remaining sections. Never label a section from a guess; preserve unknown bytes and attach evidence/confidence.
 
-The reader should record evidence and preserve unknown bytes. Semantic decoding is added only after verification against real Generals/Zero Hour map samples or reliable format evidence.
+### 2. Real binary writer
+Encode verified sections while preserving every unknown section byte-for-byte.
 
-## Current architecture
+### 3. Mod/INI asset database
+Read supplied mod files and build a registry of factions, units, buildings, upgrades, special powers, templates and PlayerTemplate/ownership data. Use actual definitions.
 
-```text
-.map / sample data
-       |
-       v
- Sample Discovery
-       |
-       v
-    MapReader
-       |
-       +--> Header Evidence
-       +--> Header Words
-       +--> Region Detection
-       +--> Layout Matching
-       |
-       v
-   MapDocument
-       |
-       +--> Waypoints
-       +--> Objects
-       +--> Scripts
-       +--> Opaque Sections
-       |
-       v
-   EditSession
-       |
-       v
- Preservation Writer
-       |
-       v
-   output .map
+### 4. GUI
+Build the independent World Builder interface around MapEditorService: open/save-as, map/terrain view, waypoint/object placement, owner/team selection, script editor, undo/redo, validation panel, mod asset browser, and separate reference-map workspace.
 
-Separate reporting path:
+### 5. Mission/script system
+Translate common World Builder concepts into validated internal commands and export only when the map representation is verified.
 
-MapReader -> Section Report -> Research/Comparison Report
+### 6. Arabic optional layer
+Keep Arabic handling outside the deterministic core. The editor must work normally without AI.
 
-Separate future AI path:
+### 7. Real sample integration
+Automatically discover the two actual `.map` samples by extension and verified header; never hard-code filenames.
 
-Arabic/user description -> optional AI adapter -> validated project commands
-                                      |
-                                      X  (must NOT be required by core editor)
-```
-
-## Files added during the current build
-
-- `src/sage_map_builder/map/region_layout_matcher.py`
-- `src/sage_map_builder/map/reader.py`
-- `src/sage_map_builder/report/section_report.py`
-- `src/sage_map_builder/pipeline/map_pipeline.py`
-- `src/sage_map_builder/pipeline/multi_map_pipeline.py`
-- `src/sage_map_builder/pipeline/sample_discovery.py`
-- `src/sage_map_builder/model/map_document.py`
-- `src/sage_map_builder/model/from_reader.py`
-- `src/sage_map_builder/model/serialization.py`
-- `src/sage_map_builder/map/preservation_writer.py`
-- `src/sage_map_builder/model/edit_session.py`
-- `src/sage_map_builder/model/waypoint.py`
-- `src/sage_map_builder/model/waypoint_store.py`
-- `src/sage_map_builder/model/game_object.py`
-- `src/sage_map_builder/model/object_store.py`
-- `src/sage_map_builder/model/script.py`
-
-Associated tests were added for each implemented area.
-
-## What remains — priority order
-
-### 1. Connect model objects to one editor/domain API
-
-Create a single map-editing service so GUI code does not manipulate raw lists directly.
-
-### 2. Real `.map` semantic decoding
-
-Use the actual supplied Generals/Zero Hour maps and reliable format evidence to identify:
-
-- map header/dimensions
-- terrain/height data
-- texture information
-- object records
-- waypoint records
-- player/team data
-- script/mission data
-- remaining sections
-
-Do not guess. Record confidence/evidence for every decoded section.
-
-### 3. Real binary writer
-
-Extend the current preservation writer into a format-aware writer for verified sections while preserving all unknown sections.
-
-### 4. Mod/INI asset database
-
-Read the supplied mod files, including relevant INI structures, and create a local registry/database of:
-
-- factions
-- units
-- buildings
-- upgrades
-- weapons/special powers where needed
-- object templates
-- ownership/player templates
-
-The editor must use the actual mod definitions rather than invented unit names.
-
-### 5. Independent World Builder GUI
-
-Target capabilities:
-
-- Open map
-- Save As
-- map/terrain view
-- waypoint placement/editing
-- object placement/editing
-- owner/team selection
-- script editor
-- undo/redo
-- validation/errors panel
-- mod asset browser
-- separate sample/reference-map workspace
-
-### 6. Mission/script system
-
-Translate common World Builder concepts into validated internal commands, then export only when the corresponding binary/script representation is verified.
-
-### 7. Arabic description layer (optional and separate)
-
-Eventually accept Arabic descriptions such as mission/wave/objective descriptions. The AI adapter should produce structured commands that are validated by the deterministic core. If AI is unavailable, the editor must still function normally.
-
-### 8. Real sample-map integration
-
-Automatically discover the two real `.map` files in the repository/workspace, identify them by their actual filenames, and run the full analysis pipeline on them. Never hard-code assumed filenames.
-
-## Current stopping point
-
-The latest completed feature is the neutral mission-script model (`MapScript` / `ScriptAction`) and its tests.
-
-**Next task:** create the unified domain/editor service that manages Waypoints + Objects + Scripts in one `MapDocument`, with validation and undo/redo-ready operations. Then move immediately into real map-format decoding using the actual samples.
-
-## Working rule for future conversations
-
-When continuing this project, read this file first. Do not restart the architecture or recreate already implemented modules. Continue from the "Current stopping point" and update this file whenever a major milestone is completed.
+## Continuation rule
+Read this file first in every new conversation. Do not restart or recreate implemented architecture. Continue from **REAL MAP FORMAT DECODING — NEXT** and update this file after each major milestone.
