@@ -1,8 +1,8 @@
-"""Sequential parsing of the currently verified opaque DataChunk primitive.
+"""Sequential parsing of verified four-byte DataChunk headers.
 
-This module does not claim to decode the complete World Builder file format.
-It only walks concatenated chunks using the existing DataChunkHeader codec and
-preserves every payload byte exactly.
+Chunk labels/IDs are deliberately not inferred here; EA stores the symbolic
+mapping in the table of contents. This module only preserves the header and
+opaque payload bytes of a contiguous chunk-data stream.
 """
 from __future__ import annotations
 from dataclasses import dataclass
@@ -19,12 +19,6 @@ class OpaqueChunk:
 
 
 def read_chunk_sequence(data: bytes, *, require_exact_end: bool = True) -> tuple[OpaqueChunk, ...]:
-    """Parse a contiguous sequence of verified primitive chunks.
-
-    Unknown payloads remain opaque. Parsing stops only at the exact end of the
-    input; malformed/truncated chunks raise ValueError rather than being
-    silently discarded.
-    """
     chunks: list[OpaqueChunk] = []
     offset = 0
     while offset < len(data):
@@ -37,13 +31,11 @@ def read_chunk_sequence(data: bytes, *, require_exact_end: bool = True) -> tuple
 
 
 def write_chunk_sequence(chunks: list[OpaqueChunk] | tuple[OpaqueChunk, ...]) -> bytes:
-    """Re-encode opaque chunks without changing their payload bytes."""
     out = bytearray()
     for chunk in chunks:
         payload = bytes(chunk.payload)
         if len(payload) > 0xFFFF:
             raise ValueError("DataChunk payload exceeds uint16 size")
-        header = DataChunkHeader(chunk.header.chunk_id, chunk.header.version, len(payload))
-        out.extend(header.pack())
+        out.extend(DataChunkHeader(chunk.header.version, len(payload)).pack())
         out.extend(payload)
     return bytes(out)
