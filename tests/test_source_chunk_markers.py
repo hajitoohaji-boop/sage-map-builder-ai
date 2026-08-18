@@ -6,7 +6,7 @@ def test_source_chunk_markers_are_literal_evidence_only():
     markers = find_source_chunk_markers(data)
     assert [(m.label, m.version, m.offset) for m in markers] == [
         ("HeightMapData", 4, 2),
-        ("WaypointsList", 1, 17),
+        ("WaypointsList", 1, 18),
     ]
 
 
