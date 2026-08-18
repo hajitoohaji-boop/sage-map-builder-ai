@@ -1,9 +1,11 @@
 """Facts directly extracted from EA's released WorldBuilder source.
 
-These are deliberately metadata-only until binary layout details are independently
-confirmed against real map samples. Do not treat names here as guessed semantics.
+These facts are intentionally split from binary observations. A source fact tells
+us what WorldBuilder writes/reads; it does not by itself prove that a particular
+byte range in one of our samples is that structure.
 """
 from __future__ import annotations
+
 from dataclasses import dataclass
 
 
@@ -27,8 +29,51 @@ class WorldBuilderSaveFacts:
     compression_selected_from_world_dict_when_present: bool = True
 
 
+@dataclass(frozen=True)
+class SourceChunkSpec:
+    """A chunk whose label/version are explicit in released WB source.
+
+    ``container_order`` is the order in which the save routine emits the
+    top-level chunks when the surrounding subsystem is enabled. It is not a
+    claim about byte offsets in any particular map sample.
+    """
+
+    label: str
+    version: int
+    container_order: int
+    nested: bool = False
+    parent: str | None = None
+
+
+# Explicit openDataChunk() calls observed in WorldBuilder source. The entries
+# below intentionally exclude chunks whose label/version is hidden behind a
+# helper until that helper is audited separately (for example SidesList and
+# PolygonTrigger output).
+SOURCE_CHUNKS: tuple[SourceChunkSpec, ...] = (
+    SourceChunkSpec("HeightMapData", 4, 1),
+    SourceChunkSpec("BlendTileData", 7, 2),
+    SourceChunkSpec("WorldInfo", 1, 3),
+    SourceChunkSpec("ObjectsList", 3, 4),
+    SourceChunkSpec("Object", 3, 5, nested=True, parent="ObjectsList"),
+    SourceChunkSpec("GlobalLighting", 3, 6),
+    SourceChunkSpec("WaypointsList", 1, 7),
+)
+
 DATA_CHUNK_FACTS = DataChunkFacts()
 WORLD_BUILDER_SAVE_FACTS = WorldBuilderSaveFacts()
+
+
+def source_chunk_specs() -> tuple[SourceChunkSpec, ...]:
+    """Return the immutable source-backed chunk catalogue."""
+    return SOURCE_CHUNKS
+
+
+def find_source_chunk(label: str) -> SourceChunkSpec | None:
+    """Find an exact source-backed chunk label without guessing aliases."""
+    for spec in SOURCE_CHUNKS:
+        if spec.label == label:
+            return spec
+    return None
 
 
 def verified_source_facts() -> dict:
@@ -49,4 +94,14 @@ def verified_source_facts() -> dict:
             "waypoint_link_record_ints": WORLD_BUILDER_SAVE_FACTS.waypoint_link_record_ints,
             "compression_selected_from_world_dict_when_present": WORLD_BUILDER_SAVE_FACTS.compression_selected_from_world_dict_when_present,
         },
+        "explicit_chunks": [
+            {
+                "label": spec.label,
+                "version": spec.version,
+                "container_order": spec.container_order,
+                "nested": spec.nested,
+                "parent": spec.parent,
+            }
+            for spec in SOURCE_CHUNKS
+        ],
     }
