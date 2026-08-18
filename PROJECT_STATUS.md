@@ -1,6 +1,6 @@
 # SAGE Map Builder AI — Project Status
 
-Last updated: 2026-08-17
+Last updated: 2026-08-18
 
 ## Goal
 Build an independent World Builder-style editor for Command & Conquer: Generals – Zero Hour / SAGE maps.
@@ -55,6 +55,8 @@ Added `sample_report.py` and `compare_report.py` plus tests. Reports intentional
 - `chunk_sequence.py` preserves opaque payloads and supports lossless chunk-sequence round trip.
 - `WaypointsList` codec is source-derived, but full map chunk identity/TOC is not yet verified.
 - No semantic chunk name is promoted without both source and binary evidence.
+- Added a source-backed chunk catalogue for the explicit World Builder save calls currently audited: `HeightMapData` v4, `BlendTileData` v7, `WorldInfo` v1, `ObjectsList` v3, nested `Object` v3, `GlobalLighting` v3, and `WaypointsList` v1.
+- The catalogue deliberately leaves helper-emitted chunks such as `SidesList` and polygon-trigger data unresolved until their writers are audited.
 
 ## Mod/asset stack
 - BIG archive reader, archive access, INI parser/scanner, asset classification/index and deterministic `ModRegistry` are present.
@@ -81,7 +83,7 @@ Separate future AI path: `Arabic description -> optional AI adapter -> validated
 ## Next priorities
 
 ### 1. REAL MAP FORMAT DECODING — CURRENT
-Run the evidence/report pipeline against the two exact real samples and persist resulting JSON reports. Then use cross-sample evidence to isolate candidate sections. Do not assign semantic names yet.
+The EA source audit now gives us explicit chunk labels, versions, ordering, and payload-writing behavior for several major map sections. The next decisive step is to run the evidence/report pipeline against the two exact real samples and persist resulting JSON reports. Then use cross-sample evidence to match source-backed chunk structures to actual byte ranges. Do not assign offsets or TOC identity until the binary evidence supports them.
 
 ### 2. Golden sample tests
 Exact size/prefix/marker checks are now covered against the repository manifest; untouched preservation tests cover both real samples when checked out.
