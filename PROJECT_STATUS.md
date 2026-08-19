@@ -25,6 +25,7 @@ Build an independent World Builder-style editor for Command & Conquer: Generals 
 - Source evidence bridge for observed chunks.
 - Batch source-evidence classification and deterministic evidence summaries.
 - Position-independent cross-sample alignment of equal source-backed label/version occurrences.
+- Golden-file integrity tests and a standalone validator for the two real map samples.
 
 ## Verified real samples
 1. `MY MAP.map` — 28,712 bytes — blob SHA `7d4e1e0b21febd33a460f88a557c4a1e0b3fbb7c`.
@@ -59,6 +60,14 @@ Added:
 - `map/evidence_summary.py`: deterministic counts for total/verified/unresolved evidence.
 - `analysis/cross_sample_alignment.py`: aligns equal label/version occurrences by occurrence order instead of assuming identical absolute offsets.
 - Tests for exact match, nested Object v3, unknown versions, bounds validation, batch classification, summary behavior, and cross-sample alignment.
+
+## Golden sample integrity (2026-08-19)
+Added:
+- `tests/test_golden_map_samples.py`: verifies both repository map samples exist, have the recorded byte size, begin with `EAR\\0`, and reproduce their recorded Git blob SHA.
+- `research/map_samples/validate_golden_samples.py`: reusable validator for the same size/SHA/header invariants.
+- `tests/test_golden_map_validator.py`: invokes the reusable validator against the repository root.
+
+These checks establish that later binary-analysis results are being performed against the exact committed golden samples rather than silently changed copies. No test run is claimed here; the files were inspected after creation, but the connector did not expose a completed pytest/CI result.
 
 ## Important rules
 - Do not recreate existing files.
