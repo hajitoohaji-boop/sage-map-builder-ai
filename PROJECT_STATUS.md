@@ -24,6 +24,7 @@ Build an independent World Builder-style editor for Command & Conquer: Generals 
 - Source chunk catalogue and exact label+version matching.
 - Source evidence bridge for observed chunks.
 - Batch source-evidence classification and deterministic evidence summaries.
+- Position-independent cross-sample alignment of equal source-backed label/version occurrences.
 
 ## Verified real samples
 1. `MY MAP.map` — 28,712 bytes — blob SHA `7d4e1e0b21febd33a460f88a557c4a1e0b3fbb7c`.
@@ -56,7 +57,8 @@ Added:
 - `map/source_evidence.py`: attaches that source fact to an observed offset/end/label/version without inferring unknown semantics.
 - `map/source_evidence_batch.py`: classifies batches into verified and unresolved evidence without changing source facts.
 - `map/evidence_summary.py`: deterministic counts for total/verified/unresolved evidence.
-- Tests for exact match, nested Object v3, unknown versions, bounds validation, batch classification and summary behavior.
+- `analysis/cross_sample_alignment.py`: aligns equal label/version occurrences by occurrence order instead of assuming identical absolute offsets.
+- Tests for exact match, nested Object v3, unknown versions, bounds validation, batch classification, summary behavior, and cross-sample alignment.
 
 ## Important rules
 - Do not recreate existing files.
@@ -69,12 +71,13 @@ Added:
 
 ## Next priorities
 1. Execute/obtain evidence reports for the exact binary samples.
-2. Match source-backed labels/versions to real byte ranges using controlled binary evidence.
-3. Audit remaining WorldBuilder save helpers, especially heightmap, world info, objects and helper-emitted chunks.
-4. Decode the first newly verified semantic chunk.
-5. Prove untouched-map lossless round trip, then verified editing/writing.
-6. Expand mod/INI asset database.
-7. Build GUI and optional Arabic AI adapter only after binary core is reliable.
+2. Use position-independent marker alignment before interpreting any offset deltas.
+3. Match source-backed labels/versions to real byte ranges using controlled binary evidence.
+4. Audit remaining WorldBuilder save helpers, especially heightmap, world info, objects and helper-emitted chunks.
+5. Decode the first newly verified semantic chunk.
+6. Prove untouched-map lossless round trip, then verified editing/writing.
+7. Expand mod/INI asset database.
+8. Build GUI and optional Arabic AI adapter only after binary core is reliable.
 
 ## Integrity note
 GitHub Actions exists for pytest, but no completed CI run is currently exposed by the connector; CI is therefore not claimed as passing.
