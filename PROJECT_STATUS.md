@@ -23,6 +23,7 @@ Build an independent World Builder-style editor for Command & Conquer: Generals 
 - Verified/Opaque chunk result separation.
 - Source chunk catalogue and exact label+version matching.
 - Source evidence bridge for observed chunks.
+- Batch source-evidence classification and deterministic evidence summaries.
 
 ## Verified real samples
 1. `MY MAP.map` — 28,712 bytes — blob SHA `7d4e1e0b21febd33a460f88a557c4a1e0b3fbb7c`.
@@ -53,7 +54,9 @@ All other source-backed chunks currently remain opaque until their payload struc
 Added:
 - `formats/source_chunk_match.py`: exact label+version matching against the audited source catalogue.
 - `map/source_evidence.py`: attaches that source fact to an observed offset/end/label/version without inferring unknown semantics.
-- Tests for exact match, nested Object v3, unknown versions and bounds validation.
+- `map/source_evidence_batch.py`: classifies batches into verified and unresolved evidence without changing source facts.
+- `map/evidence_summary.py`: deterministic counts for total/verified/unresolved evidence.
+- Tests for exact match, nested Object v3, unknown versions, bounds validation, batch classification and summary behavior.
 
 ## Important rules
 - Do not recreate existing files.
