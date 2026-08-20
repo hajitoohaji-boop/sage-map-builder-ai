@@ -28,6 +28,7 @@ Build an independent World Builder-style editor for Command & Conquer: Generals 
 - Golden-file integrity tests and a standalone validator for the two real map samples.
 - Versioned natural-language request boundary and conservative Arabic/English request parsing for explicit dimensions only.
 - Deterministic bridge from `MapRequest` to the existing `MapGenerationPlan`; it validates the plan and deliberately leaves non-explicit map details empty rather than inventing them.
+- Deterministic extraction of an explicitly stated objective into `MapGenerationPlan.intent.objectives`; no placements, waves or scripts are invented.
 
 ## Verified real samples
 1. `MY MAP.map` — 28,712 bytes — blob SHA `7d4e1e0b21febd33a460f88a557c4a1e0b3fbb7c`.
@@ -54,23 +55,6 @@ The verified binary primitive is a 4-byte header: little-endian uint16 `version`
 
 All other source-backed chunks currently remain opaque until their payload structure is supported by source + binary evidence.
 
-## New evidence bridge (2026-08-19)
-Added:
-- `formats/source_chunk_match.py`: exact label+version matching against the audited source catalogue.
-- `map/source_evidence.py`: attaches that source fact to an observed offset/end/label/version without inferring unknown semantics.
-- `map/source_evidence_batch.py`: classifies batches into verified and unresolved evidence without changing source facts.
-- `map/evidence_summary.py`: deterministic counts for total/verified/unresolved evidence.
-- `analysis/cross_sample_alignment.py`: aligns equal label/version occurrences by occurrence order instead of assuming identical absolute offsets.
-- Tests for exact match, nested Object v3, unknown versions, bounds validation, batch classification, summary behavior, and cross-sample alignment.
-
-## Golden sample integrity (2026-08-19)
-Added:
-- `tests/test_golden_map_samples.py`: verifies both repository map samples exist, have the recorded byte size, begin with `EAR\\0`, and reproduce their recorded Git blob SHA.
-- `research/map_samples/validate_golden_samples.py`: reusable validator for the same size/SHA/header invariants.
-- `tests/test_golden_map_validator.py`: invokes the reusable validator against the repository root.
-
-These checks establish that later binary-analysis results are being performed against the exact committed golden samples rather than silently changed copies. No test run is claimed here; the files were inspected after creation, but the connector did not expose a completed pytest/CI result.
-
 ## AI request boundary (2026-08-20)
 Added:
 - `ai/request.py`: versioned `MapRequest` boundary. It keeps natural-language input outside the deterministic engine and validates only the request envelope.
@@ -78,6 +62,8 @@ Added:
 - `tests/test_request_parser.py`: verifies Arabic/English detection, explicit dimension extraction, and deterministic defaults.
 - `ai/request_to_plan.py`: deterministic bridge from the request parser into the existing `MapGenerationPlan`. It validates the resulting plan and leaves placements/mission details empty unless another evidence-backed planner supplies them.
 - `tests/test_request_to_plan.py`: verifies explicit dimensions, title hints, and the absence of invented placements/scripts/waves/objectives.
+- `ai/plan_extraction.py`: conservative explicit-fact extraction layer; currently adds only an explicitly written `objective:` / `هدف:` to the existing plan intent while preserving unknown requirements as unresolved natural language.
+- `tests/test_plan_extraction.py`: verifies Arabic dimensions/objective extraction and confirms that a vague request does not invent placements, scripts or waves.
 
 This is intentionally still a conservative AI boundary. It does **not** claim that arbitrary natural language can yet be converted into a complete map. The existing deterministic `MapGenerationPlan`/compiler remains the execution boundary.
 
