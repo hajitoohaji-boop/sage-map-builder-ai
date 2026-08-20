@@ -27,6 +27,7 @@ Build an independent World Builder-style editor for Command & Conquer: Generals 
 - Position-independent cross-sample alignment of equal source-backed label/version occurrences.
 - Golden-file integrity tests and a standalone validator for the two real map samples.
 - Versioned natural-language request boundary and conservative Arabic/English request parsing for explicit dimensions only.
+- Deterministic bridge from `MapRequest` to the existing `MapGenerationPlan`; it validates the plan and deliberately leaves non-explicit map details empty rather than inventing them.
 
 ## Verified real samples
 1. `MY MAP.map` — 28,712 bytes — blob SHA `7d4e1e0b21febd33a460f88a557c4a1e0b3fbb7c`.
@@ -75,8 +76,10 @@ Added:
 - `ai/request.py`: versioned `MapRequest` boundary. It keeps natural-language input outside the deterministic engine and validates only the request envelope.
 - `ai/request_parser.py`: conservative parser that detects Arabic vs English and extracts only explicitly written `WIDTHxHEIGHT` dimensions. It deliberately does not invent factions, objects, terrain, scripts, or assets.
 - `tests/test_request_parser.py`: verifies Arabic/English detection, explicit dimension extraction, and deterministic defaults.
+- `ai/request_to_plan.py`: deterministic bridge from the request parser into the existing `MapGenerationPlan`. It validates the resulting plan and leaves placements/mission details empty unless another evidence-backed planner supplies them.
+- `tests/test_request_to_plan.py`: verifies explicit dimensions, title hints, and the absence of invented placements/scripts/waves/objectives.
 
-This is intentionally only the first AI boundary. It does **not** claim that arbitrary natural language can yet be converted into a complete map. The existing deterministic `MapGenerationPlan`/compiler remains the execution boundary.
+This is intentionally still a conservative AI boundary. It does **not** claim that arbitrary natural language can yet be converted into a complete map. The existing deterministic `MapGenerationPlan`/compiler remains the execution boundary.
 
 ## Important rules
 - Do not recreate existing files.
