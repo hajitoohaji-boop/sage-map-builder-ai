@@ -31,6 +31,7 @@ Build an independent World Builder-style editor for Command & Conquer: Generals 
 - Deterministic extraction of an explicitly stated objective into `MapGenerationPlan.intent.objectives`; no placements, waves or scripts are invented.
 - Explicit-fact extraction for labeled `factions`, `players`, `constraints`, and `objective`/`هدف` fields; prose such as “American and Chinese forces” is deliberately not converted into faction IDs.
 - Mission-fact integration into `request_to_plan`: explicitly labeled factions/objectives now populate the existing plan intent and mission objective fields without inventing waves, scripts, placements, or asset IDs.
+- Deterministic mission compiler: structured `MissionIntent` player/base/wave records can now be validated and converted into the existing `MissionPlan`; free prose remains ignored rather than inferred.
 
 ## Verified real samples
 1. `MY MAP.map` — 28,712 bytes — blob SHA `7d4e1e0b21febd33a460f88a557c4a1e0b3fbb7c`.
@@ -71,6 +72,7 @@ Added:
 - `ai/mission_facts.py`: extracts explicitly labeled mission fields and safely applies complete player/faction pairs and objectives to a `MissionPlan`; it does not infer facts from ordinary prose.
 - `tests/test_mission_facts.py`: verifies explicit mission extraction and non-inference.
 - `tests/test_request_to_plan_mission_facts.py`: verifies that explicit faction/objective facts now flow through the request-to-plan bridge without creating waves or placements.
+- `planning/mission_compiler.py`: deterministic bridge from structured `MissionIntent` dictionaries to the existing `MissionPlan`; it rejects unsupported or incomplete records and does not interpret free prose.
 
 This is intentionally still a conservative AI boundary. It does **not** claim that arbitrary natural language can yet be converted into a complete map. The existing deterministic `MapGenerationPlan`/compiler remains the execution boundary.
 
