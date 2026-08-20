@@ -1,6 +1,6 @@
 # SAGE Map Builder AI — Project Status
 
-Last updated: 2026-08-19
+Last updated: 2026-08-20
 
 ## Goal
 Build an independent World Builder-style editor for Command & Conquer: Generals – Zero Hour / SAGE maps. The core editor is deterministic and never guesses unknown binary structures; AI is optional and separate. Final goal: a usable independent World Builder that can eventually understand a user description, generate a complete valid map compatible with the game/mod, and provide an editor-like view.
@@ -26,6 +26,7 @@ Build an independent World Builder-style editor for Command & Conquer: Generals 
 - Batch source-evidence classification and deterministic evidence summaries.
 - Position-independent cross-sample alignment of equal source-backed label/version occurrences.
 - Golden-file integrity tests and a standalone validator for the two real map samples.
+- Versioned natural-language request boundary and conservative Arabic/English request parsing for explicit dimensions only.
 
 ## Verified real samples
 1. `MY MAP.map` — 28,712 bytes — blob SHA `7d4e1e0b21febd33a460f88a557c4a1e0b3fbb7c`.
@@ -69,6 +70,14 @@ Added:
 
 These checks establish that later binary-analysis results are being performed against the exact committed golden samples rather than silently changed copies. No test run is claimed here; the files were inspected after creation, but the connector did not expose a completed pytest/CI result.
 
+## AI request boundary (2026-08-20)
+Added:
+- `ai/request.py`: versioned `MapRequest` boundary. It keeps natural-language input outside the deterministic engine and validates only the request envelope.
+- `ai/request_parser.py`: conservative parser that detects Arabic vs English and extracts only explicitly written `WIDTHxHEIGHT` dimensions. It deliberately does not invent factions, objects, terrain, scripts, or assets.
+- `tests/test_request_parser.py`: verifies Arabic/English detection, explicit dimension extraction, and deterministic defaults.
+
+This is intentionally only the first AI boundary. It does **not** claim that arbitrary natural language can yet be converted into a complete map. The existing deterministic `MapGenerationPlan`/compiler remains the execution boundary.
+
 ## Important rules
 - Do not recreate existing files.
 - Do not claim tests passed unless an actual test run/result is available.
@@ -86,7 +95,8 @@ These checks establish that later binary-analysis results are being performed ag
 5. Decode the first newly verified semantic chunk.
 6. Prove untouched-map lossless round trip, then verified editing/writing.
 7. Expand mod/INI asset database.
-8. Build GUI and optional Arabic AI adapter only after binary core is reliable.
+8. Expand the AI request parser into structured intent extraction only when backed by deterministic schema/tests, then connect it to the existing `MapGenerationPlan`.
+9. Build GUI only after binary core is reliable.
 
 ## Integrity note
 GitHub Actions exists for pytest, but no completed CI run is currently exposed by the connector; CI is therefore not claimed as passing.
