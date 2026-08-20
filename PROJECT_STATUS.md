@@ -29,6 +29,7 @@ Build an independent World Builder-style editor for Command & Conquer: Generals 
 - Versioned natural-language request boundary and conservative Arabic/English request parsing for explicit dimensions only.
 - Deterministic bridge from `MapRequest` to the existing `MapGenerationPlan`; it validates the plan and deliberately leaves non-explicit map details empty rather than inventing them.
 - Deterministic extraction of an explicitly stated objective into `MapGenerationPlan.intent.objectives`; no placements, waves or scripts are invented.
+- Explicit-fact extraction for labeled `factions`, `players`, `constraints`, and `objective`/`هدف` fields; prose such as “American and Chinese forces” is deliberately not converted into faction IDs.
 
 ## Verified real samples
 1. `MY MAP.map` — 28,712 bytes — blob SHA `7d4e1e0b21febd33a460f88a557c4a1e0b3fbb7c`.
@@ -64,6 +65,8 @@ Added:
 - `tests/test_request_to_plan.py`: verifies explicit dimensions, title hints, and the absence of invented placements/scripts/waves/objectives.
 - `ai/plan_extraction.py`: conservative explicit-fact extraction layer; currently adds only an explicitly written `objective:` / `هدف:` to the existing plan intent while preserving unknown requirements as unresolved natural language.
 - `tests/test_plan_extraction.py`: verifies Arabic dimensions/objective extraction and confirms that a vague request does not invent placements, scripts or waves.
+- `ai/explicit_facts.py`: extracts only explicitly labeled factions/players/constraints/objective fields from the request text; it never maps natural-language faction names to mod IDs.
+- `tests/test_explicit_facts.py`: verifies explicit faction/constraint extraction and the deliberate non-inference behavior for ordinary prose.
 
 This is intentionally still a conservative AI boundary. It does **not** claim that arbitrary natural language can yet be converted into a complete map. The existing deterministic `MapGenerationPlan`/compiler remains the execution boundary.
 
